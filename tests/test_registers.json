@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Test1",
+    "id": "DB0.DBX0.0",
+    "type": "BOOL"
+  },
+  {
+    "name": "Test2",
+    "id": "DB12.DBX0.1",
+    "type": "BOOL"
+  },
+  {
+    "name": "Test3",
+    "id": "DB120.DBX12.2",
+    "type": "BOOL"
+  },
+  {
+    "name": "Testint",
+    "id": "DB2.DBD3",
+    "type": "INT32"
+  },
+  {
+    "name": "TestFloat",
+    "id": "DB250.DBD1",
+    "type": "FLOAT"
+  },
+  {
+    "name": "TestInt16",
+    "id": "DB10.DBW5",
+    "type": "INT16"
+  }
+]

@@ -8,7 +8,7 @@ pub mod utils;
 
 use errors::S7Error;
 
-struct S7Device {
+pub struct S7Device {
     option: Options,
     client: Option<S7Client>,
 }
