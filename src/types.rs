@@ -66,15 +66,33 @@ impl TryFrom<(Vec<u8>, Register)> for RegisterValue {
                     return Err(MismatchedRegisterLengthError.into());
                 }
                 let addr = match datatype.addr {
-                    RegAddress::Byte(addr) => return Err(MismatchedRegisterLengthError.into()),
+                    RegAddress::Byte(_) => return Err(MismatchedRegisterLengthError.into()),
                     RegAddress::Bit(addr) => addr,
                 };
                 let bit = byte.unwrap() & (1 << addr.bit);
                 Ok(RegisterValue::Boolean(bit != 0))
             }
-            DataType::FLOAT => todo!(),
-            DataType::INT32 => todo!(),
-            DataType::INT16 => todo!(),
+            DataType::FLOAT => {
+                let val = f32::from_le_bytes(match raw.try_into() {
+                    Ok(val) => val,
+                    Err(_err) => return Err(MismatchedRegisterLengthError.into()),
+                });
+                Ok(RegisterValue::Float32(val))
+            }
+            DataType::INT32 => {
+                let val = i32::from_le_bytes(match raw.try_into() {
+                    Ok(val) => val,
+                    Err(_err) => return Err(MismatchedRegisterLengthError.into()),
+                });
+                Ok(RegisterValue::S32(val))
+            }
+            DataType::INT16 => {
+                let val = i16::from_le_bytes(match raw.try_into() {
+                    Ok(val) => val,
+                    Err(_err) => return Err(MismatchedRegisterLengthError.into()),
+                });
+                Ok(RegisterValue::S16(val))
+            }
         }
     }
 }

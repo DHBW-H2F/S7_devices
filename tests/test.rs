@@ -34,3 +34,10 @@ async fn read_register() {
         assert!(val);
     }
 }
+#[tokio::test]
+async fn dump_registers() {
+    let mut dev = create_dev();
+    dev.connect().await.unwrap();
+    let res = dev.dump_registers().await.unwrap();
+    println!("{res:?}");
+}
