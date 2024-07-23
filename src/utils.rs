@@ -1,7 +1,5 @@
 use std::{collections::HashMap, fs::File};
 
-use log::warn;
-
 use de_regex;
 use serde::{Deserialize, Serialize};
 

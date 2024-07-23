@@ -4,6 +4,7 @@ use crate::errors::{MismatchedRegisterLengthError, S7Error};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum DataType {
+    #[serde(alias = "BIT")]
     BOOL,
     FLOAT,
     INT32,
