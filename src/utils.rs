@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fs::File};
 
 use de_regex;
+use log::error;
 use serde::{Deserialize, Serialize};
 
 use crate::types::{BitAddress, ByteAddress, DataType, RegAddress, Register};
@@ -18,19 +19,33 @@ const WORD_ADDRESS_REGEX: &str = r"^DB(?P<db>\d+)\.DBW(?P<byte>\d+)$";
 const BIT_ADDRESS_REGEX: &str = r"^DB(?P<db>\d+)\.DBX(?P<byte>\d+)\.(?P<bit>\d+)$";
 
 #[derive(Debug)]
+pub struct RegexError {
+    regex: de_regex::Error,
+    field: String,
+}
+
+#[derive(Debug)]
 pub enum JsonReadError {
     SerdeJson(serde_json::Error),
-    DeRegex(de_regex::Error),
+    Regex(RegexError),
 }
 
 impl From<de_regex::Error> for JsonReadError {
     fn from(value: de_regex::Error) -> Self {
-        JsonReadError::DeRegex(value)
+        JsonReadError::Regex(RegexError {
+            regex: value,
+            field: "".to_string(),
+        })
     }
 }
 impl From<serde_json::Error> for JsonReadError {
     fn from(value: serde_json::Error) -> Self {
         JsonReadError::SerdeJson(value)
+    }
+}
+impl From<RegexError> for JsonReadError {
+    fn from(value: RegexError) -> Self {
+        JsonReadError::Regex(value)
     }
 }
 
@@ -40,7 +55,17 @@ pub fn get_defs_from_json(input: File) -> Result<HashMap<String, Register>, Json
     for f in raw {
         let addr: RegAddress = match f.type_ {
             DataType::BOOL => {
-                let res: BitAddress = de_regex::from_str(f.id.as_str(), BIT_ADDRESS_REGEX)?;
+                let res: BitAddress = match de_regex::from_str(f.id.as_str(), BIT_ADDRESS_REGEX) {
+                    Ok(val) => val,
+                    Err(err) => {
+                        error!("No match on address {0} ({err})", f.id);
+                        return Err(RegexError {
+                            regex: err,
+                            field: f.id,
+                        }
+                        .into());
+                    }
+                };
                 res.into()
             }
             DataType::FLOAT | DataType::INT32 => {
