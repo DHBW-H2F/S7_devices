@@ -101,7 +101,6 @@ impl S7Connexion for S7Device {
         };
 
         let rec_val = self.client.as_mut().unwrap().read(vec![area]).await?;
-        println!("{rec_val:?}");
         let raw: Option<&DataItemVal> = rec_val.get(0);
 
         let bytes: Vec<u8> = raw.unwrap().data.clone();
