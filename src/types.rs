@@ -73,21 +73,21 @@ impl TryFrom<(Vec<u8>, Register)> for RegisterValue {
                 Ok(RegisterValue::Boolean(bit != 0))
             }
             DataType::FLOAT => {
-                let val = f32::from_le_bytes(match raw.try_into() {
+                let val = f32::from_be_bytes(match raw.try_into() {
                     Ok(val) => val,
                     Err(_err) => return Err(MismatchedRegisterLengthError.into()),
                 });
                 Ok(RegisterValue::Float32(val))
             }
             DataType::INT32 => {
-                let val = i32::from_le_bytes(match raw.try_into() {
+                let val = i32::from_be_bytes(match raw.try_into() {
                     Ok(val) => val,
                     Err(_err) => return Err(MismatchedRegisterLengthError.into()),
                 });
                 Ok(RegisterValue::S32(val))
             }
             DataType::INT16 => {
-                let val = i16::from_le_bytes(match raw.try_into() {
+                let val = i16::from_be_bytes(match raw.try_into() {
                     Ok(val) => val,
                     Err(_err) => return Err(MismatchedRegisterLengthError.into()),
                 });
