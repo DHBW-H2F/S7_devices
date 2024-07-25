@@ -69,7 +69,7 @@ impl TryFrom<(Vec<u8>, Register)> for RegisterValue {
                     RegAddress::Byte(_) => return Err(MismatchedRegisterLengthError.into()),
                     RegAddress::Bit(addr) => addr,
                 };
-                let bit = byte.unwrap() & (1 << addr.bit);
+                let bit = byte.ok_or(MismatchedRegisterLengthError {})? & (1 << addr.bit);
                 Ok(RegisterValue::Boolean(bit != 0))
             }
             DataType::FLOAT => {

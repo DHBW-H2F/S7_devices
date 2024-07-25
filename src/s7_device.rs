@@ -20,10 +20,10 @@ impl S7Device {
         let option = Options::new(
             addr.ip(),
             addr.port(),
-            s7_client::ConnectMode::RackSlot {
-                conn_type: s7_client::ConnectionType::PG,
-                rack: 0,
-                slot: 1,
+            s7_client::ConnectMode::Tsap {
+                conn_type: s7_client::ConnectionType::OP,
+                local_tsap: 1000,
+                remote_tsap: 0001,
             },
         );
         S7Device {
