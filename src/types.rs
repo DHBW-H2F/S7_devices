@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::errors::{MismatchedRegisterLengthError, S7Error};
+use crate::errors::{InvalidRegisterValue, MismatchedRegisterLengthError, S7Error};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum DataType {
@@ -19,6 +19,41 @@ pub enum RegisterValue {
     Boolean(bool),
 }
 
+impl TryFrom<RegisterValue> for bool {
+    type Error = InvalidRegisterValue;
+
+    fn try_from(value: RegisterValue) -> Result<Self, Self::Error> {
+        match value {
+            RegisterValue::Boolean(val) => Ok(val),
+            _ => Err(InvalidRegisterValue),
+        }
+    }
+}
+
+impl TryFrom<RegisterValue> for i16 {
+    type Error = InvalidRegisterValue;
+
+    fn try_from(value: RegisterValue) -> Result<Self, Self::Error> {
+        match value {
+            RegisterValue::S16(val) => Ok(val),
+            _ => Err(InvalidRegisterValue),
+        }
+    }
+}
+
+impl TryFrom<RegisterValue> for Vec<u8> {
+    type Error = InvalidRegisterValue;
+
+    fn try_from(value: RegisterValue) -> Result<Self, Self::Error> {
+        match value {
+            RegisterValue::S16(val) => Ok(Vec::from(val.to_be_bytes())),
+            RegisterValue::S32(val) => Ok(Vec::from(val.to_be_bytes())),
+            RegisterValue::Float32(val) => Ok(Vec::from(val.to_be_bytes())),
+            RegisterValue::Boolean(_) => Err(InvalidRegisterValue),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum RegAddress {
     Byte(ByteAddress),
@@ -29,7 +64,7 @@ pub enum RegAddress {
 pub struct BitAddress {
     pub db: u16,
     pub byte: u16,
-    pub bit: u16,
+    pub bit: u8,
 }
 #[derive(Debug, Deserialize, Clone)]
 pub struct ByteAddress {
@@ -45,6 +80,28 @@ impl From<ByteAddress> for RegAddress {
 impl From<BitAddress> for RegAddress {
     fn from(value: BitAddress) -> Self {
         RegAddress::Bit(value)
+    }
+}
+
+impl TryFrom<RegAddress> for BitAddress {
+    type Error = MismatchedRegisterLengthError;
+
+    fn try_from(value: RegAddress) -> Result<Self, Self::Error> {
+        match value {
+            RegAddress::Byte(_val) => Err(MismatchedRegisterLengthError),
+            RegAddress::Bit(val) => Ok(val),
+        }
+    }
+}
+
+impl TryFrom<RegAddress> for ByteAddress {
+    type Error = MismatchedRegisterLengthError;
+
+    fn try_from(value: RegAddress) -> Result<Self, Self::Error> {
+        match value {
+            RegAddress::Byte(val) => Ok(val),
+            RegAddress::Bit(_) => Err(MismatchedRegisterLengthError),
+        }
     }
 }
 

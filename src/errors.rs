@@ -4,6 +4,8 @@ pub struct DeviceNotConnectedError;
 pub struct MismatchedRegisterLengthError;
 #[derive(Debug)]
 pub struct RegisterDoesNotExistsError;
+#[derive(Debug)]
+pub struct InvalidRegisterValue;
 
 #[derive(Debug)]
 pub enum S7Error {
@@ -11,6 +13,7 @@ pub enum S7Error {
     DeviceNotConnectedError(DeviceNotConnectedError),
     MismatchedRegisterLengthError(MismatchedRegisterLengthError),
     RegisterDoesNotExistsError(RegisterDoesNotExistsError),
+    InvalidRegisterValue(InvalidRegisterValue),
 }
 
 impl From<s7_client::Error> for S7Error {
@@ -34,5 +37,11 @@ impl From<MismatchedRegisterLengthError> for S7Error {
 impl From<RegisterDoesNotExistsError> for S7Error {
     fn from(value: RegisterDoesNotExistsError) -> Self {
         S7Error::RegisterDoesNotExistsError(value)
+    }
+}
+
+impl From<InvalidRegisterValue> for S7Error {
+    fn from(value: InvalidRegisterValue) -> Self {
+        S7Error::InvalidRegisterValue(value)
     }
 }

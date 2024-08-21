@@ -7,7 +7,7 @@ pub mod types;
 pub mod utils;
 
 use errors::{DeviceNotConnectedError, RegisterDoesNotExistsError, S7Error};
-use types::{RegAddress, Register, RegisterValue};
+use types::{BitAddress, ByteAddress, RegAddress, Register, RegisterValue};
 
 pub struct S7Device {
     option: Options,
@@ -40,6 +40,12 @@ pub trait S7Connexion {
         &mut self,
         regs: Vec<Register>,
     ) -> Result<HashMap<String, RegisterValue>, S7Error>;
+    async fn write_register(&mut self, reg: Register, val: RegisterValue) -> Result<(), S7Error>;
+    async fn write_register_by_name(
+        &mut self,
+        name: String,
+        val: RegisterValue,
+    ) -> Result<(), S7Error>;
     async fn dump_registers(&mut self) -> Result<HashMap<String, RegisterValue>, S7Error>;
 }
 
@@ -132,5 +138,45 @@ impl S7Connexion for S7Device {
             res.insert(reg.name.clone(), val);
         }
         Ok(res)
+    }
+
+    async fn write_register(&mut self, reg: Register, val: RegisterValue) -> Result<(), S7Error> {
+        if self.client.is_none() {
+            return Err(DeviceNotConnectedError.into());
+        }
+
+        match reg.data_type {
+            types::DataType::BOOL => {
+                let addr: BitAddress = reg.addr.try_into()?;
+                self.client
+                    .as_mut()
+                    .unwrap()
+                    .write_db_bit(addr.db, addr.byte, addr.bit, val.try_into()?)
+                    .await?
+            }
+            types::DataType::FLOAT | types::DataType::INT32 | types::DataType::INT16 => {
+                let addr: ByteAddress = reg.addr.try_into()?;
+                let value: Vec<u8> = val.try_into()?;
+                self.client
+                    .as_mut()
+                    .unwrap()
+                    .write_db_bytes(addr.db, addr.byte, &value)
+                    .await?
+            }
+        };
+        Ok(())
+    }
+
+    async fn write_register_by_name(
+        &mut self,
+        name: String,
+        val: RegisterValue,
+    ) -> Result<(), S7Error> {
+        let reg = self.get_register_by_name(name);
+
+        match reg {
+            Some(reg) => self.write_register(reg.clone(), val).await,
+            None => return Err(RegisterDoesNotExistsError.into()),
+        }
     }
 }

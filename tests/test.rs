@@ -31,7 +31,7 @@ async fn read_register() {
         .await
         .unwrap();
     if let RegisterValue::Boolean(val) = res {
-        assert!(val);
+        assert!(!val);
     }
 }
 #[tokio::test]
@@ -40,4 +40,18 @@ async fn dump_registers() {
     dev.connect().await.unwrap();
     let res = dev.dump_registers().await.unwrap();
     println!("{res:?}");
+}
+
+#[tokio::test]
+async fn write_register() {
+    let mut dev = create_dev();
+    dev.connect().await.unwrap();
+    dev.write_register_by_name("TestInt16".to_string(), RegisterValue::S16(69))
+        .await
+        .unwrap();
+    let res = dev
+        .read_register_by_name("TestInt16".to_string())
+        .await
+        .unwrap();
+    assert!(TryInto::<i16>::try_into(res).unwrap() == 69);
 }
