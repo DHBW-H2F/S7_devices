@@ -28,7 +28,7 @@ impl From<S7Error> for IndustrialDeviceError {
     fn from(value: S7Error) -> Self {
         match value {
             S7Error::S7ClientError { err } => {
-                IndustrialDeviceError::RequestError { err: Box::new(err) }
+                IndustrialDeviceError::DeviceNotAccessibleError { err: Box::new(err) }
             }
             S7Error::DeviceNotConnectedError => IndustrialDeviceError::DeviceNotConnectedError {
                 err: Box::new(value),
