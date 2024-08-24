@@ -1,4 +1,5 @@
-use s7_device::{types::RegisterValue, utils, S7Connexion, S7Device};
+use s7_device::s7_connexion::S7Connexion;
+use s7_device::{types::RegisterValue, utils, S7Device};
 use std::fs::File;
 use tokio;
 

@@ -73,6 +73,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "custom_error"
+version = "1.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f8a51dd197fa6ba5b4dc98a990a43cc13693c23eb0089ebb0fcc1f04152bca6"
+
+[[package]]
 name = "de-regex"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -126,6 +132,14 @@ checksum = "168fb715dda47215e360912c096649d23d58bf392ac62f73919e831745e40f26"
 dependencies = [
  "equivalent",
  "hashbrown",
+]
+
+[[package]]
+name = "industrial_device"
+version = "0.1.0"
+source = "git+https://github.com/lkzjdnb/industrial_device.git#ecd19dda49506ff940eac0f1cce958d83e5050b5"
+dependencies = [
+ "trait-variant",
 ]
 
 [[package]]
@@ -328,7 +342,9 @@ dependencies = [
 name = "s7_device"
 version = "0.1.0"
 dependencies = [
+ "custom_error",
  "de-regex",
+ "industrial_device",
  "log",
  "s7-client",
  "serde",

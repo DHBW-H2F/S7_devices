@@ -1,12 +1,15 @@
 use std::{collections::HashMap, net::SocketAddr};
 
-use s7_client::{s7_comm::DataItemVal, Area, BitAddr, Options, S7Client};
+use s7_client::{s7_comm::DataItemVal, Area, Options, S7Client};
 
 pub mod errors;
+pub mod industrial_device;
+pub mod s7_connexion;
 pub mod types;
 pub mod utils;
 
-use errors::{DeviceNotConnectedError, RegisterDoesNotExistsError, S7Error};
+use errors::S7Error;
+use s7_connexion::S7Connexion;
 use types::{BitAddress, ByteAddress, RegAddress, Register, RegisterValue};
 
 pub struct S7Device {
@@ -30,25 +33,6 @@ impl S7Device {
     }
 }
 
-#[trait_variant::make(ModbusFactory: Send)]
-pub trait S7Connexion {
-    async fn connect(&mut self) -> Result<(), S7Error>;
-    async fn read_register(&mut self, reg: Register) -> Result<RegisterValue, S7Error>;
-    fn get_register_by_name(&self, name: String) -> Option<&Register>;
-    async fn read_register_by_name(&mut self, name: String) -> Result<RegisterValue, S7Error>;
-    async fn read_registers(
-        &mut self,
-        regs: Vec<Register>,
-    ) -> Result<HashMap<String, RegisterValue>, S7Error>;
-    async fn write_register(&mut self, reg: Register, val: RegisterValue) -> Result<(), S7Error>;
-    async fn write_register_by_name(
-        &mut self,
-        name: String,
-        val: RegisterValue,
-    ) -> Result<(), S7Error>;
-    async fn dump_registers(&mut self) -> Result<HashMap<String, RegisterValue>, S7Error>;
-}
-
 impl S7Connexion for S7Device {
     async fn connect(&mut self) -> Result<(), S7Error> {
         self.client = Some(S7Client::connect(self.option.clone()).await?);
@@ -57,7 +41,7 @@ impl S7Connexion for S7Device {
 
     async fn read_register(&mut self, reg: Register) -> Result<RegisterValue, S7Error> {
         if self.client.is_none() {
-            return Err(DeviceNotConnectedError.into());
+            return Err(S7Error::DeviceNotConnectedError);
         }
         let area = match reg.data_type {
             types::DataType::BOOL => match reg.addr.clone() {
@@ -115,7 +99,7 @@ impl S7Connexion for S7Device {
 
         match reg {
             Some(reg) => self.read_register(reg.clone()).await,
-            None => return Err(RegisterDoesNotExistsError.into()),
+            None => return Err(S7Error::RegisterDoesNotExistsError),
         }
     }
 
@@ -142,7 +126,7 @@ impl S7Connexion for S7Device {
 
     async fn write_register(&mut self, reg: Register, val: RegisterValue) -> Result<(), S7Error> {
         if self.client.is_none() {
-            return Err(DeviceNotConnectedError.into());
+            return Err(S7Error::DeviceNotConnectedError);
         }
 
         match reg.data_type {
@@ -176,7 +160,7 @@ impl S7Connexion for S7Device {
 
         match reg {
             Some(reg) => self.write_register(reg.clone(), val).await,
-            None => return Err(RegisterDoesNotExistsError.into()),
+            None => return Err(S7Error::RegisterDoesNotExistsError),
         }
     }
 }

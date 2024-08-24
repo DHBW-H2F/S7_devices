@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::errors::{InvalidRegisterValue, MismatchedRegisterLengthError, S7Error};
+use crate::errors::S7Error;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum DataType {
@@ -20,36 +20,36 @@ pub enum RegisterValue {
 }
 
 impl TryFrom<RegisterValue> for bool {
-    type Error = InvalidRegisterValue;
+    type Error = S7Error;
 
     fn try_from(value: RegisterValue) -> Result<Self, Self::Error> {
         match value {
             RegisterValue::Boolean(val) => Ok(val),
-            _ => Err(InvalidRegisterValue),
+            _ => Err(S7Error::InvalidRegisterValue),
         }
     }
 }
 
 impl TryFrom<RegisterValue> for i16 {
-    type Error = InvalidRegisterValue;
+    type Error = S7Error;
 
     fn try_from(value: RegisterValue) -> Result<Self, Self::Error> {
         match value {
             RegisterValue::S16(val) => Ok(val),
-            _ => Err(InvalidRegisterValue),
+            _ => Err(S7Error::InvalidRegisterValue),
         }
     }
 }
 
 impl TryFrom<RegisterValue> for Vec<u8> {
-    type Error = InvalidRegisterValue;
+    type Error = S7Error;
 
     fn try_from(value: RegisterValue) -> Result<Self, Self::Error> {
         match value {
             RegisterValue::S16(val) => Ok(Vec::from(val.to_be_bytes())),
             RegisterValue::S32(val) => Ok(Vec::from(val.to_be_bytes())),
             RegisterValue::Float32(val) => Ok(Vec::from(val.to_be_bytes())),
-            RegisterValue::Boolean(_) => Err(InvalidRegisterValue),
+            RegisterValue::Boolean(_) => Err(S7Error::InvalidRegisterValue),
         }
     }
 }
@@ -84,23 +84,23 @@ impl From<BitAddress> for RegAddress {
 }
 
 impl TryFrom<RegAddress> for BitAddress {
-    type Error = MismatchedRegisterLengthError;
+    type Error = S7Error;
 
     fn try_from(value: RegAddress) -> Result<Self, Self::Error> {
         match value {
-            RegAddress::Byte(_val) => Err(MismatchedRegisterLengthError),
+            RegAddress::Byte(_val) => Err(S7Error::MismatchedRegisterLengthError),
             RegAddress::Bit(val) => Ok(val),
         }
     }
 }
 
 impl TryFrom<RegAddress> for ByteAddress {
-    type Error = MismatchedRegisterLengthError;
+    type Error = S7Error;
 
     fn try_from(value: RegAddress) -> Result<Self, Self::Error> {
         match value {
             RegAddress::Byte(val) => Ok(val),
-            RegAddress::Bit(_) => Err(MismatchedRegisterLengthError),
+            RegAddress::Bit(_) => Err(S7Error::MismatchedRegisterLengthError),
         }
     }
 }
@@ -120,33 +120,33 @@ impl TryFrom<(Vec<u8>, Register)> for RegisterValue {
             DataType::BOOL => {
                 let byte = raw.get(0);
                 if byte.is_none() {
-                    return Err(MismatchedRegisterLengthError.into());
+                    return Err(S7Error::MismatchedRegisterLengthError);
                 }
                 let addr = match datatype.addr {
-                    RegAddress::Byte(_) => return Err(MismatchedRegisterLengthError.into()),
+                    RegAddress::Byte(_) => return Err(S7Error::MismatchedRegisterLengthError),
                     RegAddress::Bit(addr) => addr,
                 };
-                let bit = byte.ok_or(MismatchedRegisterLengthError {})? & (1 << addr.bit);
+                let bit = byte.ok_or(S7Error::MismatchedRegisterLengthError)? & (1 << addr.bit);
                 Ok(RegisterValue::Boolean(bit != 0))
             }
             DataType::FLOAT => {
                 let val = f32::from_be_bytes(match raw.try_into() {
                     Ok(val) => val,
-                    Err(_err) => return Err(MismatchedRegisterLengthError.into()),
+                    Err(_err) => return Err(S7Error::MismatchedRegisterLengthError),
                 });
                 Ok(RegisterValue::Float32(val))
             }
             DataType::INT32 => {
                 let val = i32::from_be_bytes(match raw.try_into() {
                     Ok(val) => val,
-                    Err(_err) => return Err(MismatchedRegisterLengthError.into()),
+                    Err(_err) => return Err(S7Error::MismatchedRegisterLengthError),
                 });
                 Ok(RegisterValue::S32(val))
             }
             DataType::INT16 => {
                 let val = i16::from_be_bytes(match raw.try_into() {
                     Ok(val) => val,
-                    Err(_err) => return Err(MismatchedRegisterLengthError.into()),
+                    Err(_err) => return Err(S7Error::MismatchedRegisterLengthError),
                 });
                 Ok(RegisterValue::S16(val))
             }
