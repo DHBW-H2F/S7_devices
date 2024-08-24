@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::errors::S7Error;
 use crate::s7_connexion::S7Connexion;
+use crate::types::RegisterValue;
 use crate::S7Device;
 
 use industrial_device::errors::IndustrialDeviceError;
@@ -15,7 +16,11 @@ impl IndustrialDevice for S7Device {
     }
 
     async fn dump_registers(&mut self) -> Result<HashMap<String, Value>, IndustrialDeviceError> {
-        todo!()
+        let vals = S7Connexion::dump_registers(self).await?;
+        Ok(vals
+            .iter()
+            .map(|(name, val)| (name.clone(), Into::<Value>::into(*val)))
+            .collect())
     }
 }
 
@@ -37,6 +42,17 @@ impl From<S7Error> for IndustrialDeviceError {
             S7Error::InvalidRegisterValue => IndustrialDeviceError::RequestError {
                 err: Box::new(value),
             },
+        }
+    }
+}
+
+impl From<RegisterValue> for Value {
+    fn from(value: RegisterValue) -> Self {
+        match value {
+            RegisterValue::S16(val) => Value::S16(val),
+            RegisterValue::S32(val) => Value::S32(val),
+            RegisterValue::Float32(val) => Value::Float32(val),
+            RegisterValue::Boolean(val) => Value::Boolean(val),
         }
     }
 }

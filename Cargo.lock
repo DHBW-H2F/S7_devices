@@ -140,7 +140,7 @@ dependencies = [
 [[package]]
 name = "industrial_device"
 version = "0.1.0"
-source = "git+https://github.com/lkzjdnb/industrial_device.git#97661e41e8bcbaa72b9f5c72c0de9a17d666d02d"
+source = "git+https://github.com/lkzjdnb/industrial_device.git#b5c21be35efda2a78505cca034531568db5a54d0"
 dependencies = [
  "custom_error",
  "trait-variant",
