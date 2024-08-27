@@ -39,13 +39,14 @@ impl S7Connexion for S7Device {
         Ok(())
     }
 
-    async fn read_register(&mut self, reg: Register) -> Result<RegisterValue, S7Error> {
-        if self.client.is_none() {
-            return Err(S7Error::DeviceNotConnectedError);
-        }
+    async fn read_register(&mut self, reg: &Register) -> Result<RegisterValue, S7Error> {
+        self.client
+            .as_ref()
+            .ok_or(S7Error::DeviceNotConnectedError)?;
+
         let area = match reg.data_type {
-            types::DataType::BOOL => match reg.addr.clone() {
-                RegAddress::Byte(val) => panic!("Mismatched register type and address ({val:?})"),
+            types::DataType::BOOL => match &reg.addr {
+                RegAddress::Byte(_val) => return Err(S7Error::MismatchedRegisterLengthError),
                 RegAddress::Bit(addr) => Area::DataBausteine(
                     addr.db,
                     s7_client::DataSizeType::Byte {
@@ -54,7 +55,7 @@ impl S7Connexion for S7Device {
                     },
                 ),
             },
-            types::DataType::FLOAT => match reg.addr.clone() {
+            types::DataType::FLOAT => match &reg.addr {
                 RegAddress::Byte(addr) => Area::DataBausteine(
                     addr.db,
                     s7_client::DataSizeType::Real {
@@ -62,9 +63,9 @@ impl S7Connexion for S7Device {
                         len: 4,
                     },
                 ),
-                RegAddress::Bit(_) => todo!(),
+                RegAddress::Bit(_) => return Err(S7Error::MismatchedRegisterLengthError),
             },
-            types::DataType::INT32 => match reg.addr.clone() {
+            types::DataType::INT32 => match &reg.addr {
                 RegAddress::Byte(addr) => Area::DataBausteine(
                     addr.db,
                     s7_client::DataSizeType::Int {
@@ -72,9 +73,9 @@ impl S7Connexion for S7Device {
                         len: 4,
                     },
                 ),
-                RegAddress::Bit(_) => todo!(),
+                RegAddress::Bit(_) => return Err(S7Error::MismatchedRegisterLengthError),
             },
-            types::DataType::INT16 => match reg.addr.clone() {
+            types::DataType::INT16 => match &reg.addr {
                 RegAddress::Byte(addr) => Area::DataBausteine(
                     addr.db,
                     s7_client::DataSizeType::Int {
@@ -82,7 +83,7 @@ impl S7Connexion for S7Device {
                         len: 2,
                     },
                 ),
-                RegAddress::Bit(_) => todo!(),
+                RegAddress::Bit(_) => return Err(S7Error::MismatchedRegisterLengthError),
             },
         };
 
@@ -90,57 +91,57 @@ impl S7Connexion for S7Device {
         let raw: Option<&DataItemVal> = rec_val.get(0);
 
         let bytes: Vec<u8> = raw.unwrap().data.clone();
-        let conv: RegisterValue = (bytes, reg).try_into()?;
+        let conv: RegisterValue = (bytes, reg.clone()).try_into()?;
         Ok(conv)
     }
 
-    async fn read_register_by_name(&mut self, name: String) -> Result<RegisterValue, S7Error> {
-        let reg = self.get_register_by_name(name);
+    async fn read_register_by_name(&mut self, name: &str) -> Result<RegisterValue, S7Error> {
+        let reg = self.get_register_by_name(name).cloned();
 
         match reg {
-            Some(reg) => self.read_register(reg.clone()).await,
+            Some(reg) => self.read_register(&reg).await,
             None => return Err(S7Error::RegisterDoesNotExistsError),
         }
     }
 
-    fn get_register_by_name(&self, name: String) -> Option<&Register> {
-        self.registers.get(&name)
+    fn get_register_by_name(&self, name: &str) -> Option<&Register> {
+        self.registers.get(name)
     }
 
     async fn dump_registers(&mut self) -> Result<HashMap<String, RegisterValue>, S7Error> {
-        self.read_registers(self.registers.clone().into_values().collect())
-            .await
+        let regs: Vec<Register> = self.registers.values().map(|v| v.clone()).collect();
+        self.read_registers(&regs).await
     }
 
     async fn read_registers(
         &mut self,
-        regs: Vec<Register>,
+        regs: &[Register],
     ) -> Result<HashMap<String, RegisterValue>, S7Error> {
         let mut res: HashMap<String, RegisterValue> = HashMap::with_capacity(regs.len());
         for reg in regs {
-            let val = self.read_register(reg.clone()).await?;
+            let val = self.read_register(reg).await?;
             res.insert(reg.name.clone(), val);
         }
         Ok(res)
     }
 
-    async fn write_register(&mut self, reg: Register, val: RegisterValue) -> Result<(), S7Error> {
+    async fn write_register(&mut self, reg: &Register, val: &RegisterValue) -> Result<(), S7Error> {
         if self.client.is_none() {
             return Err(S7Error::DeviceNotConnectedError);
         }
 
         match reg.data_type {
             types::DataType::BOOL => {
-                let addr: BitAddress = reg.addr.try_into()?;
+                let addr: BitAddress = reg.addr.clone().try_into()?;
                 self.client
                     .as_mut()
                     .unwrap()
-                    .write_db_bit(addr.db, addr.byte, addr.bit, val.try_into()?)
+                    .write_db_bit(addr.db, addr.byte, addr.bit, val.clone().try_into()?)
                     .await?
             }
             types::DataType::FLOAT | types::DataType::INT32 | types::DataType::INT16 => {
-                let addr: ByteAddress = reg.addr.try_into()?;
-                let value: Vec<u8> = val.try_into()?;
+                let addr: ByteAddress = reg.addr.clone().try_into()?;
+                let value: Vec<u8> = val.clone().try_into()?;
                 self.client
                     .as_mut()
                     .unwrap()
@@ -153,13 +154,13 @@ impl S7Connexion for S7Device {
 
     async fn write_register_by_name(
         &mut self,
-        name: String,
-        val: RegisterValue,
+        name: &str,
+        val: &RegisterValue,
     ) -> Result<(), S7Error> {
-        let reg = self.get_register_by_name(name);
+        let reg = self.get_register_by_name(name).cloned();
 
         match reg {
-            Some(reg) => self.write_register(reg.clone(), val).await,
+            Some(reg) => self.write_register(&reg, val).await,
             None => return Err(S7Error::RegisterDoesNotExistsError),
         }
     }

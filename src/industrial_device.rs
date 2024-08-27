@@ -22,6 +22,19 @@ impl IndustrialDevice for S7Device {
             .map(|(name, val)| (name.clone(), Into::<Value>::into(*val)))
             .collect())
     }
+
+    async fn read_register_by_name(&mut self, name: &str) -> Result<Value, IndustrialDeviceError> {
+        Ok(S7Connexion::read_register_by_name(self, name).await?.into())
+    }
+
+    async fn write_register_by_name(
+        &mut self,
+        name: &str,
+        value: &Value,
+    ) -> Result<(), IndustrialDeviceError> {
+        let val: RegisterValue = value.clone().try_into()?;
+        Ok(S7Connexion::write_register_by_name(self, name, &val).await?)
+    }
 }
 
 impl From<S7Error> for IndustrialDeviceError {
@@ -55,4 +68,23 @@ impl From<RegisterValue> for Value {
             RegisterValue::Boolean(val) => Value::Boolean(val),
         }
     }
+}
+
+impl TryFrom<Value> for RegisterValue {
+    fn try_from(value: Value) -> Result<Self, IndustrialDeviceError> {
+        let res = match value {
+            Value::S16(val) => RegisterValue::S16(val),
+            Value::S32(val) => RegisterValue::S32(val),
+            Value::Float32(val) => RegisterValue::Float32(val),
+            Value::Boolean(val) => RegisterValue::Boolean(val),
+            _ => {
+                return Err(IndustrialDeviceError::WrongValueType {
+                    val: format!("{value:?}"),
+                })
+            }
+        };
+        Ok(res)
+    }
+
+    type Error = IndustrialDeviceError;
 }
