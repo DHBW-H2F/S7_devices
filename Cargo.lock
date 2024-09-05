@@ -43,9 +43,9 @@ dependencies = [
 
 [[package]]
 name = "async-trait"
-version = "0.1.81"
+version = "0.1.82"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e0c28dcc82d7c8ead5cb13beb15405b57b8546e93215673ff8ca0349a028107"
+checksum = "a27b8a3a6e1a44fa4c8baf1f653e4172e81486d4941f2237e20dc2d0cf4ddff1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -665,11 +665,11 @@ dependencies = [
 
 [[package]]
 name = "industrial_device"
-version = "0.1.2"
-source = "git+https://github.com/lkzjdnb/industrial_device.git#22ca8539b4665f1259904c9cfb2dd59e95328095"
+version = "0.1.3"
+source = "git+https://github.com/lkzjdnb/industrial_device.git#2f01d58922da7322288760933fbe0aa618105717"
 dependencies = [
+ "async-trait",
  "custom_error",
- "trait-variant",
 ]
 
 [[package]]
@@ -1050,8 +1050,9 @@ dependencies = [
 
 [[package]]
 name = "s7_device"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
+ "async-trait",
  "custom_error",
  "de-regex",
  "industrial_device",
@@ -1061,7 +1062,6 @@ dependencies = [
  "serde_json",
  "testcontainers",
  "tokio",
- "trait-variant",
 ]
 
 [[package]]
@@ -1492,17 +1492,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c06d3da6113f116aaee68e4d601191614c9053067f9ab7f6edbcb161237daa54"
 dependencies = [
  "once_cell",
-]
-
-[[package]]
-name = "trait-variant"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70977707304198400eb4835a78f6a9f928bf41bba420deb8fdb175cd965d77a7"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]

@@ -9,6 +9,9 @@ use industrial_device::errors::IndustrialDeviceError;
 use industrial_device::types::Value;
 use industrial_device::IndustrialDevice;
 
+use async_trait::async_trait;
+
+#[async_trait]
 impl IndustrialDevice for S7Device {
     async fn connect(&mut self) -> Result<(), IndustrialDeviceError> {
         S7Connexion::connect(self).await?;
