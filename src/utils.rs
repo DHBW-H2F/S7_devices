@@ -7,6 +7,16 @@ use serde::{Deserialize, Serialize};
 use crate::types::{BitAddress, ByteAddress, DataType, RegAddress, Register};
 
 #[derive(Serialize, Deserialize)]
+
+/// Format of a register
+/// 
+/// Parameters :
+/// 
+/// * `type` (`DataType`) - the type of the data of the register
+/// * `name` (`String`) - the name of the register
+/// * `id` (`String`) - the adresse of the register
+/// 
+/// ```
 struct RegistersFormat {
     pub name: String,
     pub id: String,
@@ -33,7 +43,17 @@ impl From<serde_json::Error> for JsonReadError {
         JsonReadError::SerdeJson { err: value }
     }
 }
-
+/// get the s7 register from a file
+/// 
+/// # Parameters
+/// 
+/// - `input` (`File`) - the file who contains the register
+/// 
+/// # Returns
+/// 
+/// - `Result<HashMap<String, Register>, JsonReadError>` - the list of register with the name in key and the register in value;
+/// if failed return a JsonReadError
+/// 
 pub fn get_defs_from_json(input: File) -> Result<HashMap<String, Register>, JsonReadError> {
     let raw: Vec<RegistersFormat> = serde_json::from_reader(input)?;
     let mut m = HashMap::<String, Register>::new();

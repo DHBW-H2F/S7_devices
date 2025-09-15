@@ -12,6 +12,8 @@ pub enum DataType {
 }
 
 #[derive(Debug, Clone, Copy)]
+/// The `RegisterValue` is defining different variants to represent values
+/// that can be stored in a register.
 pub enum RegisterValue {
     S16(i16),
     S32(i32),
@@ -55,18 +57,48 @@ impl TryFrom<RegisterValue> for Vec<u8> {
 }
 
 #[derive(Debug, Clone)]
+/// The `RegAddress` is defining different variants to represent a register a `Byte adress` or a `Bit Adress`
 pub enum RegAddress {
     Byte(ByteAddress),
     Bit(BitAddress),
 }
 
+
 #[derive(Debug, Deserialize, Clone)]
+/// Represents a memory address at the **bit** level in an S7 controller.
+/// 
+///
+/// Properties:
+/// * `db`: Number of the **Data Block** (DB) in which the address is located.
+/// * `byte`: Index of the byte in the DB.
+/// * `bit`: Index of the bit in the byte (value between `0` and `7`).
+///
+/// # Exemple
+/// ```rust
+/// let addr = BitAddress { db: 1, byte: 10, bit: 3 };
+/// /*  Represents DB1.DBX10.3 in Siemens notation */
+/// ```
 pub struct BitAddress {
     pub db: u16,
     pub byte: u16,
     pub bit: u8,
 }
 #[derive(Debug, Deserialize, Clone)]
+
+/// Represents a memory address at the **byte** level in an S7 PLC.
+/// 
+/// Unlike `BitAddress`, this structure is used when you want to access an entire register (1 byte or more),
+///  without targeting a specific bit.
+///
+/// Properties:
+/// * `db`: **Data Block** (DB) number.
+/// * `byte`: Index of the byte within the DB.
+/// 
+/// # Exemple
+/// ```rust
+/// let addr = ByteAddress { db: 1, byte: 20 };
+/// /* Represents DB1.DBB20 in Siemens notation */
+/// ```
 pub struct ByteAddress {
     pub db: u16,
     pub byte: u16,
@@ -106,6 +138,15 @@ impl TryFrom<RegAddress> for ByteAddress {
 }
 
 #[derive(Debug, Clone)]
+/// Format of a register
+/// 
+/// Parameters :
+/// 
+/// * `data_type` (`DataType`) - the type of the data of the register
+/// * `name` (`String`) - the name of the register
+/// * `addr` (`RegAddress`) - the adresse of the register
+/// 
+/// ```
 pub struct Register {
     pub data_type: DataType,
     pub name: String,

@@ -5,6 +5,7 @@ use crate::{
     types::{Register, RegisterValue},
 };
 
+/// This code snippet defines a "interfaces" named `S7Connexion` reffering to the s7 device
 pub trait S7Connexion {
     fn connect(&mut self) -> impl std::future::Future<Output = Result<(), S7Error>> + Send;
     fn read_register(

@@ -12,6 +12,16 @@ use errors::S7Error;
 use s7_connexion::S7Connexion;
 use types::{BitAddress, ByteAddress, RegAddress, Register, RegisterValue};
 
+/// The `S7Device` struct represents a device with options, a client, and registers in Rust.
+/// 
+/// Properties:
+/// 
+/// * `option`: The `option` is used to store the configuration related to the device (IP, port, ConnectMode ).
+/// * `client`: It allows the `S7Device` struct to have a client associated with it, but it can also be `None` if no
+/// client is currently connected.
+/// * `registers`: The `registers` property in the `S7Device` struct is a HashMap that stores key-value
+/// pairs where the key is a `String` and the value is a `Register` struct. This allows you to store and
+/// access registers by their unique names within the device.
 pub struct S7Device {
     option: Options,
     client: Option<S7Client>,
@@ -19,6 +29,18 @@ pub struct S7Device {
 }
 
 impl S7Device {
+    /// The function `new` creates a new `S7Device` instance with a specified address and register map.
+    /// 
+    /// Parameters :
+    /// 
+    /// * `addr`: a SocketAddr that represents a socket address, which includes an IP address
+    /// and a port number.
+    /// * `regs`: The `regs` parameter is a `HashMap<String, Register>`, which is the list of the register of the S7 device
+    /// 
+    /// Returns:
+    /// 
+    /// A new instance of the `S7Device` struct is being returned with the provided `SocketAddr` and
+    /// `HashMap<String, Register>` as parameters.
     pub fn new(addr: SocketAddr, regs: HashMap<String, Register>) -> Self {
         let option = Options::new(
             addr.ip(),
@@ -34,11 +56,29 @@ impl S7Device {
 }
 
 impl S7Connexion for S7Device {
+    /// Establishes a connection with the S7 device.
+    ///
+    /// Errors :
+    /// Returns `S7Error` if the connection fails.
     async fn connect(&mut self) -> Result<(), S7Error> {
         self.client = Some(S7Client::connect(self.option.clone()).await?);
         Ok(())
     }
 
+
+    /// Reads the value of a specific register from the S7 PLC.
+    ///
+    ///
+    /// Parameters :
+    /// - `reg`: description of the register to read (`Register`).
+    ///
+    /// Returns :
+    /// The register value as a `RegisterValue`.
+    ///
+    /// Errors :
+    /// - `DeviceNotConnectedError` if the client is not connected.
+    /// - `MismatchedRegisterLengthError` if the address does not match
+    ///   the expected type (e.g. `BOOL` on a `ByteAddress`).
     async fn read_register(&mut self, reg: &Register) -> Result<RegisterValue, S7Error> {
         self.client
             .as_ref()
@@ -95,6 +135,16 @@ impl S7Connexion for S7Device {
         Ok(conv)
     }
 
+    /// Reads a register by its logical name defined in the configuration.
+    ///
+    /// Parameters :
+    /// - `name`: the name of the register.
+    ///
+    /// Returns :
+    /// The register value (`RegisterValue`).
+    ///
+    /// Errors :
+    /// - `RegisterDoesNotExistsError` if no register with this name is defined.
     async fn read_register_by_name(&mut self, name: &str) -> Result<RegisterValue, S7Error> {
         let reg = self.get_register_by_name(name).cloned();
 
@@ -104,15 +154,39 @@ impl S7Connexion for S7Device {
         }
     }
 
+    /// Retrieves a register definition by its logical name.
+    ///
+    /// Parameters :
+    /// - `name`: symbolic name of the register.
+    ///
+    /// Returns :
+    /// A reference to the `Register` if found, otherwise `None`.
     fn get_register_by_name(&self, name: &str) -> Option<&Register> {
         self.registers.get(name)
     }
 
+    /// Reads the value of **all known registers** of the device.
+    ///
+    /// Returns :
+    /// - `HashMap<String, RegisterValue>`: table of register names and values.
+    ///
+    /// Errors :
+    /// Propagates errors from `read_registers`.
     async fn dump_registers(&mut self) -> Result<HashMap<String, RegisterValue>, S7Error> {
         let regs: Vec<Register> = self.registers.values().map(|v| v.clone()).collect();
         self.read_registers(&regs).await
     }
 
+    /// Reads multiple registers at once.
+    ///
+    /// Parameters :
+    /// - `regs`: list of registers to read.
+    ///
+    /// Returns :
+    /// - `HashMap<String, RegisterValue>`: mapping of register name → value.
+    ///
+    /// Errors :
+    /// Propagates errors from `read_register`.
     async fn read_registers(
         &mut self,
         regs: &[Register],
@@ -125,6 +199,20 @@ impl S7Connexion for S7Device {
         Ok(res)
     }
 
+    /// Writes a value to a specific register of the S7 PLC.
+    ///
+    /// Depending on the data type, the write is performed as:
+    /// - `BOOL` → single bit write (`BitAddress`).
+    /// - `FLOAT`, `INT16`, `INT32` → byte/block write (`ByteAddress`).
+    ///
+    /// Parameters :
+    /// - `reg`: description of the register.
+    /// - `val`: value to be written (`RegisterValue`).
+    ///
+    /// Errors :
+    /// - `DeviceNotConnectedError` if the client is not connected.
+    /// - `MismatchedRegisterLengthError` if the address does not match
+    ///   the expected type.
     async fn write_register(&mut self, reg: &Register, val: &RegisterValue) -> Result<(), S7Error> {
         if self.client.is_none() {
             return Err(S7Error::DeviceNotConnectedError);
@@ -152,6 +240,14 @@ impl S7Connexion for S7Device {
         Ok(())
     }
 
+    /// Writes a value to a register identified by its logical name.
+    ///
+    /// Parameters :
+    /// - `name`: symbolic name of the register.
+    /// - `val`: value to be written.
+    ///
+    /// Errors :
+    /// - `RegisterDoesNotExistsError` if the register does not exist.
     async fn write_register_by_name(
         &mut self,
         name: &str,

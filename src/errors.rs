@@ -1,6 +1,10 @@
 use custom_error::custom_error;
 
-custom_error! {pub S7Error
+
+custom_error! {
+/// This code snippet is defining a custom error type `S7Error` using the `custom_error`
+/// crate in Rust.
+pub S7Error
     S7ClientError {err: s7_client::Error} = "Client error {err}",
     DeviceNotConnectedError = "The device is not connected",
     MismatchedRegisterLengthError = "The given register length does not match the selected register",
